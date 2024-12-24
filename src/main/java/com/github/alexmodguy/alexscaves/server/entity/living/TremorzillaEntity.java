@@ -10,6 +10,7 @@ import com.github.alexmodguy.alexscaves.server.entity.ACEntityRegistry;
 import com.github.alexmodguy.alexscaves.server.entity.ai.*;
 import com.github.alexmodguy.alexscaves.server.entity.item.NuclearBombEntity;
 import com.github.alexmodguy.alexscaves.server.entity.util.*;
+import com.github.alexmodguy.alexscaves.server.item.ACItemRegistry;
 import com.github.alexmodguy.alexscaves.server.message.MountedEntityKeyMessage;
 import com.github.alexmodguy.alexscaves.server.misc.*;
 import com.github.alexmodguy.alexscaves.server.potion.ACEffectRegistry;
@@ -55,6 +56,7 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Explosion;
@@ -68,6 +70,9 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.entity.PartEntity;
 import net.minecraftforge.fluids.FluidType;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 import java.util.Optional;
@@ -171,6 +176,38 @@ public class TremorzillaEntity extends DinosaurEntity implements KeybindUsingMou
         return new AdvancedPathNavigateNoTeleport(this, level);
     }
 
+
+    private static final EntityDataAccessor<Boolean> GAMMA = SynchedEntityData.defineId(TremorzillaEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> ANIMATION_BEAMING = SynchedEntityData.defineId(TremorzillaEntity.class, EntityDataSerializers.BOOLEAN);
+
+
+
+    public boolean isGamma() {
+        return this.entityData.get(GAMMA);
+    }
+
+    public void setGamma(boolean variant) {
+        this.entityData.set(GAMMA, Boolean.valueOf(variant));
+    }
+
+
+    public boolean isAnimationBeaming() {
+        return this.entityData.get(ANIMATION_BEAMING);
+    }
+
+    public void setAnimationBeaming(boolean variant) {
+        this.entityData.set(ANIMATION_BEAMING, Boolean.valueOf(variant));
+    }
+
+
+
+
+
+
+
+
+
+
     protected void switchNavigator(boolean onLand) {
         if (onLand) {
             this.lookControl = new LookControl(this);
@@ -196,6 +233,8 @@ public class TremorzillaEntity extends DinosaurEntity implements KeybindUsingMou
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
+        this.entityData.define(GAMMA, false);
+        this.entityData.define(ANIMATION_BEAMING, false);
         this.entityData.define(BEAM_END_POSITION, Optional.empty());
         this.entityData.define(SWIMMING, false);
         this.entityData.define(CHARGE, MAX_CHARGE);
@@ -230,6 +269,18 @@ public class TremorzillaEntity extends DinosaurEntity implements KeybindUsingMou
 
     public void tick() {
         super.tick();
+        if (getAnimation() == ANIMATION_ROAR_2 && getAnimationTick() >= 20){
+            setAnimationBeaming(true);
+            tickBreath();
+        } else if (isAnimationBeaming() && getAnimation() != ANIMATION_ROAR_2){
+            beamTime = 0;
+            this.playSound(ACSoundRegistry.TREMORZILLA_BEAM_END.get(), 8.0F, 1.0F);
+            this.beamServerTarget = null;
+            this.setBeamEndPosition(null);
+            this.setCharge(0);
+            setAnimationBeaming(false);
+        }
+
         AnimationHandler.INSTANCE.updateAnimations(this);
         this.legSolver.update(this, this.yBodyRot, this.getScale());
         prevScreenShakeAmount = screenShakeAmount;
@@ -253,19 +304,19 @@ public class TremorzillaEntity extends DinosaurEntity implements KeybindUsingMou
         if (screenShakeAmount > 0) {
             screenShakeAmount = Math.max(0, screenShakeAmount - 0.34F);
         }
-        if (this.isFiring() && beamProgress < 5F) {
+        if ((this.isAnimationBeaming() || this.isFiring()) && beamProgress < 5F) {
             beamProgress++;
         }
-        if (!this.isFiring() && beamProgress > 0F) {
+        if ((!this.isFiring() && !isAnimationBeaming()) && beamProgress > 0F) {
             beamProgress--;
         }
 
         clientSpikesDownAmount = Mth.approach(clientSpikesDownAmount, this.getSpikesDownAmount(), 0.1F);
         Vec3 beamEnd = getBeamEndPosition();
         clientBeamEndPosition = beamEnd;
-        if (this.isFiring()) {
+        if (this.isAnimationBeaming()) {
             boolean flag = false;
-            if (this.isFiring() && beamEnd != null) {
+            if (this.isAnimationBeaming() && beamEnd != null) {
                 Vec3 vec3 = beamEnd.subtract(getBeamShootFrom(1.0F));
                 float beamYaw = -((float) Mth.atan2(vec3.x, vec3.z)) * (180F / (float) Math.PI);
                 if (Mth.degreesDifferenceAbs(beamYaw, Mth.wrapDegrees(this.yBodyRot)) > 80F) {
@@ -338,13 +389,13 @@ public class TremorzillaEntity extends DinosaurEntity implements KeybindUsingMou
                     AlexsCaves.sendMSGToServer(new MountedEntityKeyMessage(this.getId(), player.getId(), 3));
                 }
             }
-            if (this.isFiring() && beamProgress > 0) {
+            if (this.isFiring() || isAnimationBeaming() && beamProgress > 0) {
                 if (!makingBeamSoundOnClient) {
                     AlexsCaves.PROXY.playWorldSound((Object) this, (byte) 16);
                     makingBeamSoundOnClient = true;
                 }
             }
-            if (!isFiring() && makingBeamSoundOnClient) {
+            if ((!isFiring() && isAnimationBeaming()) && makingBeamSoundOnClient) {
                 AlexsCaves.PROXY.clearSoundCacheFor(this);
                 makingBeamSoundOnClient = false;
             }
@@ -603,6 +654,8 @@ public class TremorzillaEntity extends DinosaurEntity implements KeybindUsingMou
     }
 
     public void travel(Vec3 vec3d) {
+        if (this.isAnimationBeaming())
+            return;
         if (this.getAnimation() == ANIMATION_LEFT_STOMP || this.getAnimation() == ANIMATION_RIGHT_STOMP || this.getAnimation() == ANIMATION_LEFT_TAIL || this.getAnimation() == ANIMATION_RIGHT_TAIL || this.isFiring() && !this.isVehicle()) {
             vec3d = Vec3.ZERO;
             super.travel(vec3d);
@@ -743,6 +796,8 @@ public class TremorzillaEntity extends DinosaurEntity implements KeybindUsingMou
 
     public void readAdditionalSaveData(CompoundTag compound) {
         super.readAdditionalSaveData(compound);
+        this.setGamma(compound.getBoolean("Gamma"));
+        this.setAnimationBeaming(compound.getBoolean("AnimationBeaming"));
         this.setCharge(compound.getInt("Charge"));
         this.setSpikesDownAmount(compound.getFloat("SpikesDownAmount"));
         this.wantsToUseBeamFromServer = compound.getBoolean("ServerBeamTrigger");
@@ -752,6 +807,8 @@ public class TremorzillaEntity extends DinosaurEntity implements KeybindUsingMou
 
     public void addAdditionalSaveData(CompoundTag compound) {
         super.addAdditionalSaveData(compound);
+        compound.putBoolean("Gamma", this.isGamma());
+        compound.putBoolean("AnimationBeaming", this.isAnimationBeaming());
         compound.putInt("Charge", this.getCharge());
         compound.putFloat("SpikesDownAmount", this.getSpikesDownAmount());
         compound.putBoolean("ServerBeamTrigger", this.wantsToUseBeamFromServer);
@@ -1149,6 +1206,15 @@ public class TremorzillaEntity extends DinosaurEntity implements KeybindUsingMou
                 this.setAnimation(ANIMATION_CHEW);
                 lastFedPlayer = player;
                 return InteractionResult.SUCCESS;
+            }
+            if (itemStack.is(ACItemRegistry.CARAMEL.get())) {
+                this.setGamma(true);
+                this.setMaxBeamBreakLength(150);
+            }
+            if (itemStack.is(Items.STICK)) {
+                this.beamServerTarget = createInitialBeamVec();
+                this.setMaxBeamBreakLength(100F);
+                setAnimation(ANIMATION_ROAR_2);
             }
         }
         return prev;
