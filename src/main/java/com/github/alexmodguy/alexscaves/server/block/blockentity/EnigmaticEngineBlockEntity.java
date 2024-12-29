@@ -80,9 +80,8 @@ public class EnigmaticEngineBlockEntity extends BlockEntity {
                 }
             }
         }
-
+        System.out.println();
         if (scrap.size() > 1) {
-            System.out.println();
             return false;
         } else {
             return false;
