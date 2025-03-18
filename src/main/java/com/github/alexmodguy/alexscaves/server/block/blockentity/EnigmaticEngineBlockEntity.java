@@ -59,26 +59,30 @@ public class EnigmaticEngineBlockEntity extends BlockEntity {
     }
 
     private boolean isAssembledInDirection(Direction direction) {
-        List<BlockPos> windowPos = new ArrayList<>();
-        for (int i = -1; i <= 1; i++) {
-            for (int j = 0; j <= 1; j++) {
-                BlockPos at = getBlockPos().relative(direction).relative(direction.getClockWise(), i).above(j);
-                if (level.getBlockState(at).is(ACBlockRegistry.DEPTH_GLASS.get())) {
-                    windowPos.add(at);
-                } else {
-                    return false;
+        List<BlockPos> scrap = new ArrayList<>();
+        for (int x = -1; x < 2; x++) {
+            for (int y = -1; y < 2; y++) {
+                for (int z = -1; z < 2; z++) {
+                    BlockPos blockCheck = new BlockPos(this.getBlockPos().getX() + x,this.getBlockPos().getY() + y,this.getBlockPos().getZ() + z);
+                    if (y == 0){
+                        if (level.getBlockState(blockCheck).is(ACBlockRegistry.SCRAP_METAL_PLATE.get())) {
+                            scrap.add(blockCheck);
+                        } else {
+                            return false;
+                        }
+                    } else {
+                        if (level.getBlockState(blockCheck).is(ACBlockRegistry.SCRAP_METAL_PLATE.get()) && x == 0 && z == 0) {
+                            scrap.add(blockCheck);
+                        } else {
+                            return false;
+                        }
+                    }
                 }
             }
         }
-        if (windowPos.size() == 6) {
-            for (BlockPos pos : BlockPos.betweenClosed(this.getBlockPos().getX() - 1, this.getBlockPos().getY() - 1, this.getBlockPos().getZ() - 1, this.getBlockPos().getX() + 1, this.getBlockPos().getY() + 1, this.getBlockPos().getZ() + 1)) {
-                if (windowPos.contains(pos) || pos.equals(this.getBlockPos())) {
-                    continue;
-                } else if (!level.getBlockState(pos).is(ACTagRegistry.SUBMARINE_ASSEMBLY_BLOCKS)) {
-                    return false;
-                }
-            }
-            return true;
+        System.out.println();
+        if (scrap.size() > 1) {
+            return false;
         } else {
             return false;
         }
