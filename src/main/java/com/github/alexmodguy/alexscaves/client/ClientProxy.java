@@ -998,7 +998,7 @@ public class ClientProxy extends CommonProxy {
             RenderSystem.defaultBlendFunc();
             RenderSystem.setShader(GameRenderer::getPositionTexShader);
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, watcherPossessionStrength * screenEffectIntensity);
-            RenderSystem.setShaderTexture(0, ClientProxy.WATCHER_EFFECT);
+
             Tesselator tesselator = Tesselator.getInstance();
             BufferBuilder bufferbuilder = tesselator.getBuilder();
             bufferbuilder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);

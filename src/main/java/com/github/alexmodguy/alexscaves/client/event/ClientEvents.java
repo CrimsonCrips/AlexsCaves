@@ -701,6 +701,7 @@ public class ClientEvents {
             int i = event.getGuiGraphics().guiWidth();
             int j = event.getY();
             Component component = event.getBossEvent().getName();
+            System.out.println(renderTypeFor + "GRASHING");
             if (renderTypeFor == 0) {
                 event.setCanceled(true);
                 event.getGuiGraphics().blit(BOSS_BAR_HUD_OVERLAYS, event.getX(), event.getY(), 0, 0, 182, 15);

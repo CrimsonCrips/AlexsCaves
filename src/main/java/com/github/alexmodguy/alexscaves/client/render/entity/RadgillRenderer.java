@@ -18,7 +18,6 @@ public class RadgillRenderer extends MobRenderer<RadgillEntity, RadgillModel> {
 
     public RadgillRenderer(EntityRendererProvider.Context renderManagerIn) {
         super(renderManagerIn, new RadgillModel(), 0.25F);
-        this.addLayer(new LayerGlow());
     }
 
     protected void scale(RadgillEntity mob, PoseStack matrixStackIn, float partialTicks) {

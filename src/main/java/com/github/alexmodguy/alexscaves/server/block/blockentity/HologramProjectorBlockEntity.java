@@ -113,9 +113,8 @@ public class HologramProjectorBlockEntity extends BlockEntity {
 
     @OnlyIn(Dist.CLIENT)
     public AABB getRenderBoundingBox() {
-        BlockPos pos = this.getBlockPos();
-        float f = displayEntity == null ? 1.0F : Math.max(displayEntity.getBbWidth(), displayEntity.getBbHeight());
-        return new AABB(pos.offset(-1, -1, -1), pos.offset(2, 2, 2)).inflate(Math.max(f - 0.5F, 1F));
+        return INFINITE_EXTENT_AABB;
+
     }
 
     @Override

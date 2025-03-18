@@ -774,8 +774,15 @@ public class TremorzillaEntity extends DinosaurEntity implements KeybindUsingMou
             if (beamServerTarget != null) {
                 Vec3 from = this.getBeamShootFrom(1.0F);
                 Vec3 normalized = from.add(beamServerTarget.subtract(from).normalize().scale(100F));
+
+
                 this.setBeamEndPosition(this.level().clip(new ClipContext(from, normalized, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this)).getLocation());
             }
+            double radius = 100; // Distance from the origin
+            double angle = Math.toRadians(tickCount % 360) * 5; // Keep angle within 0-360 degrees
+            int x = (int) (radius * Math.cos(angle));
+            int y = (int) (radius * Math.sin(angle));
+
             endBeamPos = this.getBeamEndPosition();
             boolean brokenClosestBlocks = false;
             float furthestBlockDist = 10.0F;

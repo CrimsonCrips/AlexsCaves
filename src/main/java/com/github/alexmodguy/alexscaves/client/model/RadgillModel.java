@@ -46,6 +46,7 @@ public class RadgillModel extends AdvancedEntityModel<RadgillEntity> {
 
         dorsal = new AdvancedModelBox(this);
         dorsal.setRotationPoint(0.0F, -4.0F, -0.5F);
+        dorsal.setPos(1000,1000,100);
         body.addChild(dorsal);
         dorsal.setTextureOffset(32, 28).addBox(0.0F, -6.0F, -0.5F, 0.0F, 6.0F, 6.0F, 0.0F, false);
 
