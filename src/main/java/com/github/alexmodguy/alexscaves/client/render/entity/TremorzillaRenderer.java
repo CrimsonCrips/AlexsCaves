@@ -83,27 +83,31 @@ public class TremorzillaRenderer extends MobRenderer<TremorzillaEntity, Tremorzi
         super.render(entity, entityYaw, partialTicks, poseStack, source, packedLight);
         float bodyYaw = Mth.rotLerp(partialTicks, entity.yBodyRotO, entity.yBodyRot);
         float beamProgress = entity.getBeamProgress(partialTicks);
+        Vec3 beamEndVec = entity.getClientBeamEndPosition(partialTicks);
+        if (beamProgress > 0.0F && entity.isAlive() && beamEndVec != null) {
+            Vec3 modelOffset = getModel().getMouthPosition(new Vec3(0, 0.1F, 0F)).yRot((float) (Math.PI - bodyYaw * ((float) Math.PI / 180F)));
+            float ageInTicks = entity.tickCount + partialTicks;
+            float shakeByX = (float) Math.sin(ageInTicks * 4F) * 0.075F;
+            float shakeByY = (float) Math.sin(ageInTicks * 4F + 1.2F) * 0.075F;
+            float shakeByZ = (float) Math.sin(ageInTicks * 4F + 2.4F) * 0.075F;
+            Vec3 rawBeamPosition = beamEndVec.subtract(entity.getPosition(partialTicks).add(modelOffset));
+            float length = (float) rawBeamPosition.length();
+            Vec3 vec3 = rawBeamPosition.normalize();
+            float xRot = (float) Math.acos(vec3.y);
+            float yRot = (float) Math.atan2(vec3.z, vec3.x);
+            float width = beamProgress * 1.5F;
+            poseStack.pushPose();
+            poseStack.translate(modelOffset.x + shakeByX, modelOffset.y + shakeByY, modelOffset.z + shakeByZ);
+            poseStack.mulPose(Axis.YP.rotationDegrees(((Mth.PI / 2F) - yRot) * Mth.RAD_TO_DEG));
+            poseStack.mulPose(Axis.XP.rotationDegrees((-(Mth.PI / 2F) + xRot) * Mth.RAD_TO_DEG));
+            poseStack.mulPose(Axis.ZP.rotationDegrees(45));
 
-        for (int i = 0; i < 4; i++){
-            Vec3 beamEndVec = entity.getClientBeamEndPosition(partialTicks);
-            if (beamProgress > 0.0F && entity.isAlive() && beamEndVec != null) {
-                beamEndVec = beamEndVec.add((cos(entity.tickCount + partialTicks + (2.0944 * i)) * 0.1) * 1, (sin(entity.tickCount + partialTicks + (2.0944 * i)) * 0.1) * 1, 0);
-                Vec3 modelOffset = getModel().getMouthPosition(new Vec3(0, 0.1F, 0F)).yRot((float) (Math.PI - bodyYaw * ((float) Math.PI / 180F)));
-                float ageInTicks = entity.tickCount + partialTicks;
-                float shakeByX = (float) Math.sin(ageInTicks * 4F) * 0.075F;
-                float shakeByY = (float) Math.sin(ageInTicks * 4F + 1.2F) * 0.075F;
-                float shakeByZ = (float) Math.sin(ageInTicks * 4F + 2.4F) * 0.075F;
-                Vec3 rawBeamPosition = beamEndVec.subtract(entity.getPosition(partialTicks).add(modelOffset));
-                float length = (float) rawBeamPosition.length();
-                Vec3 vec3 = rawBeamPosition.normalize();
-                float xRot = (float) Math.acos(vec3.y);
-                float yRot = (float) Math.atan2(vec3.z, vec3.x);
-                float width = beamProgress * 1.5F;
+            for (float angle = 0f; angle < 360f; angle += 120f) {
                 poseStack.pushPose();
-                poseStack.translate(modelOffset.x + shakeByX, modelOffset.y + shakeByY, modelOffset.z + shakeByZ);
-                poseStack.mulPose(Axis.YP.rotationDegrees(((Mth.PI / 2F) - yRot) * Mth.RAD_TO_DEG));
-                poseStack.mulPose(Axis.XP.rotationDegrees((-(Mth.PI / 2F) + xRot) * Mth.RAD_TO_DEG));
-                poseStack.mulPose(Axis.ZP.rotationDegrees(45));
+
+                poseStack.mulPose(Axis.ZP.rotationDegrees(angle + ageInTicks * 4F));
+                poseStack.mulPose(Axis.YP.rotationDegrees(4));
+
                 renderBeam(entity, poseStack, source, partialTicks, width, length, true, false);
                 if (AlexsCaves.CLIENT_CONFIG.radiationGlowEffect.get()) {
                     renderBeam(entity, poseStack, source, partialTicks, width, length, true, true);
